@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>Egy Quran - القرآن الكريم بصوت الشيخ أحمد عيسى المعصراوي</title>
+    <meta name="description" content="منصة Egy Quran تتيح لك الاستماع وتحميل القرآن الكريم بصوت الشيخ أحمد عيسى المعصراوي بجودة عالية، مع دعم التشغيل التلقائي والتكرار.">
+    <meta name="keywords" content="قرآن كريم, استماع القرآن, تحميل القرآن, الشيخ أحمد عيسى المعصراوي, المعصراوي, mp3 قرآن, Egy Quran">
+    <meta http-equiv="content-language" content="ar">
+
+    <link rel="canonical" href="https://egyquran.com/">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://egyquran.com/">
+    <meta property="og:title" content="Egy Quran - القرآن الكريم بصوت الشيخ أحمد عيسى المعصراوي">
+    <meta property="og:description" content="استمع وحمل سور القرآن الكريم بصوت الشيخ أحمد عيسى المعصراوي بجودة عالية وتجربة استخدام سلسة بدون إعلانات مزعجة.">
+    <meta property="og:image" content="https://egyquran.com/icon.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Egy Quran - القرآن الكريم بصوت الشيخ أحمد عيسى المعصراوي">
+    <meta name="twitter:description" content="استمع وحمل سور القرآن الكريم بصوت الشيخ المعصراوي بجودة عالية وتجربة استخدام سلسة.">
+    <meta name="twitter:image" content="https://egyquran.com/icon.png">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Egy Quran",
+      "url": "https://egyquran.com/",
+      "description": "تطبيق ويب مجاني للاستماع وتحميل القرآن الكريم بصوت الشيخ أحمد عيسى المعصراوي بوضوح وعالية الجودة.",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "All",
+      "inLanguage": "ar",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#c5a059">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Egy Quran">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G8Q3DV5BJF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-G8Q3DV5BJF');
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="install-banner" class="install-banner">
+        <img src="icon.png" alt="App Icon" class="install-icon">
+        <div class="install-info">
+            <div class="install-title" id="install-title">تثبيت تطبيق Egy Quran</div>
+            <div class="install-desc" id="install-desc">تجربة استماع أسرع وتعمل بدون إنترنت</div>
+        </div>
+        <button class="install-action-btn" id="install-action-btn">تثبيت</button>
+        <button class="install-close-btn" onclick="closeInstallBanner()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+
+    <div id="resume-banner">
+        <div class="resume-text" id="resume-text">هل تود إكمال الاستماع؟</div>
+        <div class="resume-actions">
+            <button class="resume-btn" id="resume-btn-yes" onclick="resumePlayback()">متابعة الاستماع</button>
+            <button class="resume-close" id="resume-btn-no" onclick="closeResumeBanner()">إلغاء</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <div class="container">
+        <div class="top-bar">
+            <div class="top-bar-group">
+                <button class="top-btn" onclick="toggleTheme()" id="theme-toggle-btn"></button>
+
+                <a href="mailto:your-email@example.com" class="top-btn email-btn" title="تواصل معنا">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                </a>
+                
+                <div class="radio-wrapper">
+                    <button class="top-btn" id="radio-btn" onclick="playRadio()" title="إذاعة القرآن الكريم">
+                        <span class="radio-badge" id="radio-badge"></span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="2"></circle>
+                            <path class="wave-inner" d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49"></path>
+                            <path class="wave-outer" d="M19.07 4.93a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path>
+                        </svg>
+                    </button>
+                    <div id="radio-tooltip" class="radio-tooltip">إذاعة القرآن الكريم</div>
+                </div>
+
+            </div>
+            <button class="top-btn" onclick="toggleLanguage()"><span id="lang-label">EN</span></button>
+        </div>
+
+        <header>
+            <img src="" id="header-avatar-img" class="header-img">
+            <h1 id="main-title"></h1>
+            <p id="header-subtitle"></p>
+            
+            <div id="header-equalizer" class="header-equalizer">
+                <div class="header-eq-bar"></div>
+                <div class="header-eq-bar"></div>
+                <div class="header-eq-bar"></div>
+                <div class="header-eq-bar"></div>
+                <div class="header-eq-bar"></div>
+            </div>
+        </header>
+
+        <div class="sheikh-selector-wrapper"><div class="sheikh-list" id="sheikh-carousel"></div></div>
+        
+        <div class="edition-dropdown-wrapper" id="edition-dropdown-wrapper"></div>
+        <div class="surah-list-container" id="main-surah-list"></div>
+    </div>
+
+    <div id="download-modal" class="download-modal">
+        <div class="download-modal-content">
+            <div id="dl-modal-title" class="dl-modal-title">جاري التحميل...</div>
+            <div class="dl-progress-track">
+                <div id="dl-progress-fill" class="dl-progress-fill"></div>
+            </div>
+            <div id="dl-modal-pct" class="dl-modal-pct">0%</div>
+        </div>
+    </div>
+
+    <div class="floating-player" id="global-player">
+        <div class="player-seekbar-container" id="progress-container">
+            <div class="player-seekbar-track">
+                <div class="player-seekbar-fill" id="progress-bar-fill">
+                    <div class="player-seekbar-thumb" id="progress-thumb"></div>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div id="player-track-title" style="font-size:0.8rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                <div style="font-size:0.65rem; color:var(--text-muted);"><span id="curr-time" dir="ltr">00:00</span> <span id="time-separator">/</span> <span id="total-time" dir="ltr">00:00</span></div>
+            </div>
+            
+            <div style="display:flex; align-items:center; justify-content:space-between; direction:ltr; margin-top:2px;">
+                
+                <div style="width: 70px; display: flex; justify-content: flex-start;">
+                    <button class="icon-btn" id="focus-toggle-btn" onclick="toggleFocusMode()" title="وضع الاستماع الهادئ" style="padding: 4px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <button class="icon-btn" onclick="playPrevious()" title="السابق">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                    </button>
+                    <button class="play-toggle-btn" id="player-play-btn" onclick="togglePlayPause()"></button>
+                    <button class="icon-btn" onclick="playNext()" title="التالي">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                </div>
+                
+                <div style="position: relative; width: 70px; display: flex; justify-content: flex-end;" id="playback-wrapper">
+                    <button class="icon-btn active-feature" id="btn-playback-mode" onclick="togglePlaybackMenu(event)" style="display:flex; gap:6px; font-size:0.7rem; font-weight:700;" title="إعدادات التشغيل">
+                        <span id="playback-text">تلقائي</span>
+                        <svg id="playback-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+                    </button>
+                    <div class="playback-menu" id="playback-menu" style="direction: var(--dir, rtl);"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js" defer></script>
+</body>
+</html>
