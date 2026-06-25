@@ -57,7 +57,6 @@
     </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -88,26 +87,12 @@
         <div class="top-bar">
             <div class="top-bar-group">
                 <button class="top-btn" onclick="toggleTheme()" id="theme-toggle-btn"></button>
-
                 <a href="mailto:your-email@example.com" class="top-btn email-btn" title="تواصل معنا">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                         <polyline points="22,6 12,13 2,6"></polyline>
                     </svg>
                 </a>
-                
-                <div class="radio-wrapper">
-                    <button class="top-btn" id="radio-btn" onclick="playRadio()" title="إذاعة القرآن الكريم">
-                        <span class="radio-badge" id="radio-badge"></span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="2"></circle>
-                            <path class="wave-inner" d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49"></path>
-                            <path class="wave-outer" d="M19.07 4.93a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path>
-                        </svg>
-                    </button>
-                    <div id="radio-tooltip" class="radio-tooltip">إذاعة القرآن الكريم</div>
-                </div>
-
             </div>
             <button class="top-btn" onclick="toggleLanguage()"><span id="lang-label">EN</span></button>
         </div>
@@ -127,7 +112,6 @@
         </header>
 
         <div class="sheikh-selector-wrapper"><div class="sheikh-list" id="sheikh-carousel"></div></div>
-        
         <div class="edition-dropdown-wrapper" id="edition-dropdown-wrapper"></div>
         <div class="surah-list-container" id="main-surah-list"></div>
     </div>
