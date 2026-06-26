@@ -88,7 +88,7 @@ window.addEventListener('mousedown', resetUserInteraction, {passive: true});
 function updateScrollLoop() {
     if (isFocusMode) {
         if (!isUserScrolling) {
-            // الرقم 0.004 يضمن انزلاقاً بطيئاً جداً ومريحاً للعين
+            // سرعة بطيئة فائقة النعومة
             currentScroll += (targetScroll - currentScroll) * 0.004; 
             if (Math.abs(targetScroll - currentScroll) > 0.5) {
                 window.scrollTo(0, currentScroll);
@@ -105,8 +105,13 @@ const quranTextCache = {};
 async function loadSurahText(surahId) {
     const container = document.getElementById('quran-text-content');
     
+    // تفريغ الخريطة السابقة عند تحميل سورة جديدة
+    window.ayahsMap = [];
+    window.totalSurahChars = 0;
+
     if (quranTextCache[surahId]) {
         container.innerHTML = quranTextCache[surahId];
+        calculateAyahsMap(); // إعادة الحساب في حالة الكاش
         if(isFocusMode) {
             window.scrollTo({ top: 0, behavior: 'auto' });
             currentScroll = 0; targetScroll = 0;
@@ -121,6 +126,7 @@ async function loadSurahText(surahId) {
         const data = await response.json();
         
         let textHTML = ''; 
+        let totalChars = 0; // عداد الحروف
         
         data.data.ayahs.forEach(ayah => {
             let ayahText = ayah.text;
@@ -128,11 +134,9 @@ async function loadSurahText(surahId) {
             
             if (surahId !== 1 && surahId !== 9 && ayah.numberInSurah === 1) {
                 let words = ayahText.trim().split(/\s+/);
-                
                 if (words.length > 4) {
                     let basmalaText = words.slice(0, 4).join(' '); 
                     let remainingText = words.slice(4).join(' ');  
-                    
                     introHTML = `<div class="api-intro-line" style="display: block; width: 100%; text-align: center; margin-bottom: 20px; font-size: 1.2em; color: var(--accent-gold); font-weight: bold;">${basmalaText}</div>`;
                     ayahText = remainingText;
                 } else if (words.length === 4) {
@@ -142,7 +146,9 @@ async function loadSurahText(surahId) {
             }
 
             if (ayahText.trim() !== '') {
-                textHTML += `${introHTML}<span>${ayahText} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span> </span>`;
+                totalChars += ayahText.length;
+                // تغليف الآية ببياناتها للمزامنة الذكية
+                textHTML += `${introHTML}<span class="ayah-span" data-chars="${totalChars}"><span>${ayahText} </span><span class="verse-end">﴿${ayah.numberInSurah}﴾</span></span>`;
             } else {
                 textHTML += `${introHTML}`;
             }
@@ -150,6 +156,9 @@ async function loadSurahText(surahId) {
 
         quranTextCache[surahId] = textHTML;
         container.innerHTML = textHTML;
+        
+        calculateAyahsMap();
+
         if(isFocusMode) {
             window.scrollTo({ top: 0, behavior: 'auto' });
             currentScroll = 0; targetScroll = 0;
@@ -157,6 +166,20 @@ async function loadSurahText(surahId) {
     } catch (error) {
         container.innerHTML = '<div style="color: var(--text-muted); font-family: Cairo, sans-serif; margin-top: 50px; font-size: 1rem;">يرجى الاتصال بالإنترنت لعرض النص القرآني.</div>';
     }
+}
+
+// دالة حساب أماكن الحروف بالنسبة لطول الشاشة
+function calculateAyahsMap() {
+    setTimeout(() => {
+        const spans = document.querySelectorAll('.ayah-span');
+        let maxChars = 0;
+        window.ayahsMap = Array.from(spans).map(span => {
+            let c = parseInt(span.getAttribute('data-chars'));
+            if (c > maxChars) maxChars = c;
+            return { chars: c, top: span.offsetTop };
+        });
+        window.totalSurahChars = maxChars;
+    }, 500);
 }
 
 function getSurahName(id, nameAr) { return currentLang === 'ar' ? nameAr : surahNamesEn[id]; }
@@ -189,7 +212,6 @@ function toggleTheme() {
     document.getElementById('theme-toggle-btn').innerHTML = currentTheme === 'dark' ? icons.moon : icons.sun;
 }
 
-// تعديل دالة الاستماع الهادئ لمنع القفز لقمة السورة عند الدخول مجدداً وإصلاح الشاشة البيضاء
 function toggleFocusMode() {
     isFocusMode = !isFocusMode;
     const focusBtn = document.getElementById('focus-toggle-btn');
@@ -202,20 +224,15 @@ function toggleFocusMode() {
         if(!playingSurahId) {
             document.getElementById('quran-text-content').innerHTML = '<div style="margin-top:50px; font-size:1.2rem; color:var(--text-muted); font-family: Cairo, sans-serif;">الرجاء تشغيل سورة أولاً للقراءة...</div>';
         } else {
-            // إضافة setTimeout لمنع الشاشة البيضاء وإعطاء المتصفح وقتاً لحساب الطول الجديد
+            // حل مشكلة الشاشة البيضاء بإعطاء المتصفح مهلة للرسم
             setTimeout(() => {
                 if (audioInstance.duration) {
-                    const pct = audioInstance.currentTime / audioInstance.duration;
-                    const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
-                    if (scrollableHeight > 0) {
-                        targetScroll = pct * scrollableHeight;
-                        currentScroll = targetScroll;
-                        window.scrollTo(0, targetScroll);
-                    }
+                    window.scrollTo(0, targetScroll);
                 } else {
                     window.scrollTo({ top: 0, behavior: 'auto' });
                     currentScroll = 0; targetScroll = 0;
                 }
+                calculateAyahsMap(); // إعادة حساب الأماكن بعد تغيير الواجهة
             }, 100);
         }
         
@@ -410,7 +427,7 @@ window.addEventListener('offline', () => { if (!audioInstance.paused || isBuffer
 
 audioInstance.onended = () => { if (playbackMode === 'autonext') playNext(); };
 
-// تعديل الدالة لتبدأ التمرير من نقطة الصفر بعد 15 ثانية بهدوء تام
+// خوارزمية السكرول الذكي مع احتساب وزن النص وتأخير 15 ثانية
 audioInstance.ontimeupdate = () => {
     if (audioInstance.duration && !isDragging) {
         const pct = audioInstance.currentTime / audioInstance.duration;
@@ -418,22 +435,39 @@ audioInstance.ontimeupdate = () => {
         document.getElementById('curr-time').innerText = formatTime(audioInstance.currentTime);
         document.getElementById('total-time').innerText = formatTime(audioInstance.duration);
 
-        if (isFocusMode && !isUserScrolling) {
-            const delayTime = 15; // الثواني التي سيتوقف فيها السكرول في البداية
-            const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (isFocusMode && !isUserScrolling && window.ayahsMap && window.ayahsMap.length > 0) {
+            const delayTime = 15; // 15 ثانية تأخير
             
-            if (scrollableHeight > 0) {
-                if (audioInstance.currentTime <= delayTime) {
-                    // في أول 15 ثانية، الهدف هو البقاء في أعلى الصفحة تماماً
-                    targetScroll = 0;
-                } else {
-                    // بعد 15 ثانية، نبدأ بحساب النسبة من جديد وكأنها نقطة البداية لتجنب الركض
-                    const activeTime = audioInstance.currentTime - delayTime;
-                    const activeDuration = audioInstance.duration - delayTime;
-                    const delayedPct = activeTime / activeDuration;
-                    
-                    targetScroll = delayedPct * scrollableHeight;
+            if (audioInstance.currentTime <= delayTime) {
+                targetScroll = 0;
+            } else {
+                const activeTime = audioInstance.currentTime - delayTime;
+                const activeDuration = audioInstance.duration - delayTime;
+                const delayedPct = activeTime / activeDuration;
+                
+                // تحديد مكان الحرف الحالي بدلاً من البيكسل المباشر
+                const targetChars = delayedPct * window.totalSurahChars;
+                
+                let targetElementTop = 0;
+                for (let i = 0; i < window.ayahsMap.length; i++) {
+                    if (window.ayahsMap[i].chars >= targetChars) {
+                        let prevChars = i > 0 ? window.ayahsMap[i-1].chars : 0;
+                        let prevTop = i > 0 ? window.ayahsMap[i-1].top : 0;
+                        let currentChars = window.ayahsMap[i].chars;
+                        let currentTop = window.ayahsMap[i].top;
+                        
+                        let ayahPct = (targetChars - prevChars) / (currentChars - prevChars);
+                        targetElementTop = prevTop + (ayahPct * (currentTop - prevTop));
+                        break;
+                    }
                 }
+                
+                // مسافة لإبقاء الآية مرئية ولا تلتصق بالزاوية العلوية
+                const offsetAdjust = window.innerHeight * 0.3; 
+                const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+                
+                let calculatedTarget = targetElementTop - offsetAdjust;
+                targetScroll = Math.max(0, Math.min(scrollableHeight, calculatedTarget));
             }
         }
     }
