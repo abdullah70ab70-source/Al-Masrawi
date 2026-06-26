@@ -64,6 +64,7 @@ let activeSurahsData = [], playingSurahId = null, playingSheikhId = null, playin
 let isFocusMode = false;
 let activeDownloads = {}; let savedReciterEditions = {}; let playbackMode = 'autonext'; let playbackMenuOpen = false;
 
+// متغيرات التمرير التلقائي الناعم (Smooth Auto-scroll) لمنع الرعشة
 let isUserScrolling = false;
 let userInteractionTimeout;
 let targetScroll = 0;
@@ -75,7 +76,7 @@ function resetUserInteraction() {
     clearTimeout(userInteractionTimeout);
     userInteractionTimeout = setTimeout(() => { 
         isUserScrolling = false; 
-        if (isFocusMode) currentScroll = window.scrollY; 
+        if (isFocusMode) currentScroll = window.scrollY; // العودة من النقطة التي تركها المستخدم
     }, 3500); 
 }
 
@@ -84,6 +85,7 @@ window.addEventListener('touchmove', resetUserInteraction, {passive: true});
 window.addEventListener('wheel', resetUserInteraction, {passive: true});
 window.addEventListener('mousedown', resetUserInteraction, {passive: true});
 
+// دالة التحريك التلقائي بمعدل 60 إطار في الثانية (بدون رعشة)
 function updateScrollLoop() {
     if (isFocusMode) {
         if (!isUserScrolling) {
@@ -98,36 +100,58 @@ function updateScrollLoop() {
     }
 }
 
+// كاش لتخزين النصوص
 const quranTextCache = {};
 
+// دالة جلب النص القرآني وإظهاره (معدلة)
 async function loadSurahText(surahId) {
     const container = document.getElementById('quran-text-content');
+    
     if (quranTextCache[surahId]) {
         container.innerHTML = quranTextCache[surahId];
-        if(isFocusMode) { window.scrollTo({ top: 0, behavior: 'auto' }); currentScroll = 0; targetScroll = 0; }
+        if(isFocusMode) {
+            window.scrollTo({ top: 0, behavior: 'auto' });
+            currentScroll = 0; targetScroll = 0;
+        }
         return;
     }
+
     container.innerHTML = '<div style="margin: 50px auto; display: flex; justify-content: center; color: var(--accent-gold);">' + icons.loading + '</div>';
+    
     try {
         const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahId}`);
         const data = await response.json();
+        
         let textHTML = ''; 
+        
         data.data.ayahs.forEach(ayah => {
-            let text = ayah.text;
+            let ayahText = ayah.text;
+            let introHTML = '';
+            
+            // فصل الجملة الاستهلالية من الآية الأولى (باستثناء الفاتحة 1 والتوبة 9)
             if (surahId !== 1 && surahId !== 9 && ayah.numberInSurah === 1) {
-                const bismillahRegex = /^(بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ|بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ|بِسْمِ اللهِ الرَّحْمَنِ الرَّحِيمِ)\s*/;
-                const match = text.match(bismillahRegex);
+                // اقتطاع أول 4 كلمات من النص القادم من API أياً كان تشكيلها
+                const match = ayahText.match(/^((?:[^\s]+\s+){3}[^\s]+)\s*(.*)$/);
                 if (match) {
-                    textHTML += `<div style="font-size: 1.8rem; margin: 30px auto; color: var(--text-main); display: block; width: 100%; text-align: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px;">${match[0].trim()}</div>`;
-                    text = text.replace(match[0], '');
+                    // وضع الكلمات الأربعة في سطر مستقل وفي المنتصف
+                    introHTML = `<div class="api-intro-line" style="display: block; width: 100%; text-align: center; margin-bottom: 20px; font-size: 1.2em; color: var(--accent-gold);">${match[1]}</div>`;
+                    ayahText = match[2]; // تحديث النص ليحتوي على باقي الآية فقط
                 }
             }
-            if (text.trim().length > 0) textHTML += `<span>${text} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span> </span>`;
+
+            // إضافة الجملة الاستهلالية (إن وجدت) ثم نص الآية
+            textHTML += `${introHTML}<span>${ayahText} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span> </span>`;
         });
+
         quranTextCache[surahId] = textHTML;
         container.innerHTML = textHTML;
-        if(isFocusMode) { window.scrollTo({ top: 0, behavior: 'auto' }); currentScroll = 0; targetScroll = 0; }
-    } catch (error) { container.innerHTML = '<div style="color: var(--text-muted); font-family: Cairo, sans-serif; margin-top: 50px; font-size: 1rem;">يرجى الاتصال بالإنترنت لعرض النص القرآني.</div>'; }
+        if(isFocusMode) {
+            window.scrollTo({ top: 0, behavior: 'auto' });
+            currentScroll = 0; targetScroll = 0;
+        }
+    } catch (error) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-family: Cairo, sans-serif; margin-top: 50px; font-size: 1rem;">يرجى الاتصال بالإنترنت لعرض النص القرآني.</div>';
+    }
 }
 
 function getSurahName(id, nameAr) { return currentLang === 'ar' ? nameAr : surahNamesEn[id]; }
@@ -163,17 +187,28 @@ function toggleTheme() {
 function toggleFocusMode() {
     isFocusMode = !isFocusMode;
     const focusBtn = document.getElementById('focus-toggle-btn');
+    
     if (isFocusMode) {
         document.body.classList.add('focus-mode-active');
         if (focusBtn) focusBtn.classList.add('active-feature');
         showToast(currentLang === 'ar' ? 'تم تفعيل وضع الاستماع الهادئ' : 'Focus Mode Enabled');
-        if(!playingSurahId) document.getElementById('quran-text-content').innerHTML = '<div style="margin-top:50px; font-size:1.2rem; color:var(--text-muted); font-family: Cairo, sans-serif;">الرجاء تشغيل سورة أولاً للقراءة...</div>';
-        else { window.scrollTo({ top: 0, behavior: 'auto' }); currentScroll = 0; targetScroll = 0; }
+        
+        if(!playingSurahId) {
+            document.getElementById('quran-text-content').innerHTML = '<div style="margin-top:50px; font-size:1.2rem; color:var(--text-muted); font-family: Cairo, sans-serif;">الرجاء تشغيل سورة أولاً للقراءة...</div>';
+        } else {
+            window.scrollTo({ top: 0, behavior: 'auto' });
+            currentScroll = 0; targetScroll = 0;
+        }
+        
+        // تشغيل دالة التمرير الناعم
         if (!scrollRafId) updateScrollLoop();
+
     } else {
         document.body.classList.remove('focus-mode-active');
         if (focusBtn) focusBtn.classList.remove('active-feature');
         showToast(currentLang === 'ar' ? 'تم إيقاف وضع الاستماع الهادئ' : 'Focus Mode Disabled');
+        
+        // إيقاف دالة التمرير الناعم لتوفير موارد الهاتف
         if (scrollRafId) { cancelAnimationFrame(scrollRafId); scrollRafId = null; }
     }
     syncUIWithAudioState(); 
