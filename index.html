@@ -23,24 +23,6 @@
     <meta name="twitter:description" content="استمع وحمل سور القرآن الكريم بصوت الشيخ المعصراوي بجودة عالية وتجربة استخدام سلسة.">
     <meta name="twitter:image" content="https://egyquran.com/icon.png">
 
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Egy Quran",
-      "url": "https://egyquran.com/",
-      "description": "تطبيق ويب مجاني للاستماع وتحميل القرآن الكريم بصوت الشيخ أحمد عيسى المعصراوي بوضوح وعالية الجودة.",
-      "applicationCategory": "MultimediaApplication",
-      "operatingSystem": "All",
-      "inLanguage": "ar",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      }
-    }
-    </script>
-
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#c5a059">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -48,15 +30,7 @@
     <meta name="apple-mobile-web-app-title" content="Egy Quran">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G8Q3DV5BJF"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-G8Q3DV5BJF');
-    </script>
-
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -97,7 +71,7 @@
             <button class="top-btn" onclick="toggleLanguage()"><span id="lang-label">EN</span></button>
         </div>
 
-        <header>
+        <header id="main-header">
             <img src="" id="header-avatar-img" class="header-img">
             <h1 id="main-title"></h1>
             <p id="header-subtitle"></p>
@@ -110,6 +84,10 @@
                 <div class="header-eq-bar"></div>
             </div>
         </header>
+
+        <div id="quran-text-container" class="quran-text-container">
+            <div id="quran-text-content" class="quran-text-content"></div>
+        </div>
 
         <div class="sheikh-selector-wrapper"><div class="sheikh-list" id="sheikh-carousel"></div></div>
         <div class="edition-dropdown-wrapper" id="edition-dropdown-wrapper"></div>
