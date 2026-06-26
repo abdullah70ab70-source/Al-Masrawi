@@ -64,7 +64,7 @@ let activeSurahsData = [], playingSurahId = null, playingSheikhId = null, playin
 let isFocusMode = false;
 let activeDownloads = {}; let savedReciterEditions = {}; let playbackMode = 'autonext'; let playbackMenuOpen = false;
 
-// متغيرات التمرير التلقائي الناعم (Smooth Auto-scroll) لمنع الرعشة
+// متغيرات التمرير التلقائي الناعم
 let isUserScrolling = false;
 let userInteractionTimeout;
 let targetScroll = 0;
@@ -76,7 +76,7 @@ function resetUserInteraction() {
     clearTimeout(userInteractionTimeout);
     userInteractionTimeout = setTimeout(() => { 
         isUserScrolling = false; 
-        if (isFocusMode) currentScroll = window.scrollY; // العودة من النقطة التي تركها المستخدم
+        if (isFocusMode) currentScroll = window.scrollY; 
     }, 3500); 
 }
 
@@ -85,7 +85,6 @@ window.addEventListener('touchmove', resetUserInteraction, {passive: true});
 window.addEventListener('wheel', resetUserInteraction, {passive: true});
 window.addEventListener('mousedown', resetUserInteraction, {passive: true});
 
-// دالة التحريك التلقائي بمعدل 60 إطار في الثانية (بدون رعشة)
 function updateScrollLoop() {
     if (isFocusMode) {
         if (!isUserScrolling) {
@@ -100,7 +99,6 @@ function updateScrollLoop() {
     }
 }
 
-// كاش لتخزين النصوص
 const quranTextCache = {};
 
 // دالة جلب النص القرآني وإظهاره
@@ -124,11 +122,32 @@ async function loadSurahText(surahId) {
         
         let textHTML = ''; 
         
-        // تم حذف الكود الخاص بإضافة البسملة وحذف الكود المعقد لقصها
-        // وسيتم عرضها من المصدر مباشرة كما هي
-        
+        // إضافة البسملة في سطر مستقل لوحدها (باستخدام خصائص العرض block و text-align)
+        if (surahId !== 1 && surahId !== 9) {
+            textHTML += `<div style="font-size: 1.8rem; margin-bottom: 25px; color: var(--accent-gold); display: block; width: 100%; text-align: center;">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>`;
+        }
+
         data.data.ayahs.forEach(ayah => {
-            textHTML += `<span>${ayah.text} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span> </span>`;
+            let text = ayah.text;
+            
+            // قص البسملة المدمجة في الآية الأولى لمنع التكرار بما أننا وضعناها في الأعلى
+            if (surahId !== 1 && surahId !== 9 && ayah.numberInSurah === 1) {
+                const bismillahEnd1 = text.indexOf('الرَّحِيمِ');
+                const bismillahEnd2 = text.indexOf('ٱلرَّحِيمِ');
+                const bismillahEnd3 = text.indexOf('الرحيم');
+                
+                let cutIndex = -1;
+                if (bismillahEnd1 !== -1) cutIndex = bismillahEnd1 + 'الرَّحِيمِ'.length;
+                else if (bismillahEnd2 !== -1) cutIndex = bismillahEnd2 + 'ٱلرَّحِيمِ'.length;
+                else if (bismillahEnd3 !== -1) cutIndex = bismillahEnd3 + 'الرحيم'.length;
+
+                if (cutIndex !== -1) {
+                    text = text.substring(cutIndex).trim();
+                    text = text.replace(/^[\s\u200B-\u200D\uFEFF]+/, '');
+                }
+            }
+            
+            textHTML += `<span>${text} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span> </span>`;
         });
 
         quranTextCache[surahId] = textHTML;
@@ -188,7 +207,6 @@ function toggleFocusMode() {
             currentScroll = 0; targetScroll = 0;
         }
         
-        // تشغيل دالة التمرير الناعم
         if (!scrollRafId) updateScrollLoop();
 
     } else {
@@ -196,7 +214,6 @@ function toggleFocusMode() {
         if (focusBtn) focusBtn.classList.remove('active-feature');
         showToast(currentLang === 'ar' ? 'تم إيقاف وضع الاستماع الهادئ' : 'Focus Mode Disabled');
         
-        // إيقاف دالة التمرير الناعم لتوفير موارد الهاتف
         if (scrollRafId) { cancelAnimationFrame(scrollRafId); scrollRafId = null; }
     }
     syncUIWithAudioState(); 
