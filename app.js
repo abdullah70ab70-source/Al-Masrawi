@@ -419,7 +419,7 @@ audioInstance.ontimeupdate = () => {
         document.getElementById('total-time').innerText = formatTime(audioInstance.duration);
 
         // تم تغيير التأخير إلى 5 ثوانٍ
-        if (isFocusMode && !isUserScrolling && audioInstance.currentTime > 5) {
+        if (isFocusMode && !isUserScrolling && audioInstance.currentTime > 13) {
             const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
             if (scrollableHeight > 0) {
                 targetScroll = pct * scrollableHeight;
