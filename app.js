@@ -89,13 +89,11 @@ window.addEventListener('mousedown', resetUserInteraction, {passive: true});
 function updateScrollLoop() {
     if (isFocusMode) {
         if (!isUserScrolling) {
-            // الانزلاق الحريري نحو الهدف بنسبة 3% في كل إطار
             currentScroll += (targetScroll - currentScroll) * 0.03; 
             if (Math.abs(targetScroll - currentScroll) > 0.5) {
                 window.scrollTo(0, currentScroll);
             }
         } else {
-            // مزامنة المتغير عند تمرير المستخدم للشاشة بيده
             currentScroll = window.scrollY;
         }
         scrollRafId = requestAnimationFrame(updateScrollLoop);
@@ -124,35 +122,13 @@ async function loadSurahText(surahId) {
         const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahId}`);
         const data = await response.json();
         
-        let textHTML = ''; // تم حذف اسم السورة من الأعلى نهائياً
+        let textHTML = ''; 
         
-        // إضافة البسملة كعنصر منفصل لغير سورة التوبة والفاتحة
-        if (surahId !== 1 && surahId !== 9) {
-            textHTML += `<div style="font-size: 1.6rem; margin-bottom: 20px; color: var(--accent-gold);">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>`;
-        }
-
+        // تم حذف الكود الخاص بإضافة البسملة وحذف الكود المعقد لقصها
+        // وسيتم عرضها من المصدر مباشرة كما هي
+        
         data.data.ayahs.forEach(ayah => {
-            let text = ayah.text;
-            
-            // الحل الجذري والنهائي لحذف البسملة المدمجة مهما كان تشكيلها
-            if (surahId !== 1 && surahId !== 9 && ayah.numberInSurah === 1) {
-                const bismillahEnd1 = text.indexOf('الرَّحِيمِ');
-                const bismillahEnd2 = text.indexOf('ٱلرَّحِيمِ');
-                const bismillahEnd3 = text.indexOf('الرحيم');
-                
-                let cutIndex = -1;
-                if (bismillahEnd1 !== -1) cutIndex = bismillahEnd1 + 'الرَّحِيمِ'.length;
-                else if (bismillahEnd2 !== -1) cutIndex = bismillahEnd2 + 'ٱلرَّحِيمِ'.length;
-                else if (bismillahEnd3 !== -1) cutIndex = bismillahEnd3 + 'الرحيم'.length;
-
-                if (cutIndex !== -1) {
-                    text = text.substring(cutIndex).trim();
-                    // إزالة أي فراغات أو حروف خفية متبقية بعد البسملة
-                    text = text.replace(/^[\s\u200B-\u200D\uFEFF]+/, '');
-                }
-            }
-            
-            textHTML += `<span>${text} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span> </span>`;
+            textHTML += `<span>${ayah.text} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span> </span>`;
         });
 
         quranTextCache[surahId] = textHTML;
@@ -412,7 +388,6 @@ audioInstance.ontimeupdate = () => {
         document.getElementById('curr-time').innerText = formatTime(audioInstance.currentTime);
         document.getElementById('total-time').innerText = formatTime(audioInstance.duration);
 
-        // تحديث "الهدف" للسكرول بنعومة (بدون قفزات) في الاستماع الهادئ
         if (isFocusMode && !isUserScrolling) {
             const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
             if (scrollableHeight > 0) {
