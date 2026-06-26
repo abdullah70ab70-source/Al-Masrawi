@@ -88,7 +88,8 @@ window.addEventListener('mousedown', resetUserInteraction, {passive: true});
 function updateScrollLoop() {
     if (isFocusMode) {
         if (!isUserScrolling) {
-            currentScroll += (targetScroll - currentScroll) * 0.03; 
+            // تم تغيير 0.03 إلى 0.015 ليكون التمرير أبطأ وأكثر سلاسة
+            currentScroll += (targetScroll - currentScroll) * 0.015; 
             if (Math.abs(targetScroll - currentScroll) > 0.5) {
                 window.scrollTo(0, currentScroll);
             }
@@ -188,7 +189,7 @@ function toggleTheme() {
     document.getElementById('theme-toggle-btn').innerHTML = currentTheme === 'dark' ? icons.moon : icons.sun;
 }
 
-// تعديل دالة الاستماع الهادئ لمنع القفز لقمة السورة عند الدخول مجدداً
+// تعديل دالة الاستماع الهادئ لمنع القفز لقمة السورة عند الدخول مجدداً وإصلاح الشاشة البيضاء
 function toggleFocusMode() {
     isFocusMode = !isFocusMode;
     const focusBtn = document.getElementById('focus-toggle-btn');
@@ -201,19 +202,21 @@ function toggleFocusMode() {
         if(!playingSurahId) {
             document.getElementById('quran-text-content').innerHTML = '<div style="margin-top:50px; font-size:1.2rem; color:var(--text-muted); font-family: Cairo, sans-serif;">الرجاء تشغيل سورة أولاً للقراءة...</div>';
         } else {
-            // حساب مكان تلاوة الشيخ الحالي فوراً والانتقال إليه مباشرة لمنع الرعشة والظهور من أول السورة
-            if (audioInstance.duration) {
-                const pct = audioInstance.currentTime / audioInstance.duration;
-                const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
-                if (scrollableHeight > 0) {
-                    targetScroll = pct * scrollableHeight;
-                    currentScroll = targetScroll;
-                    window.scrollTo(0, targetScroll);
+            // إضافة setTimeout لمنع الشاشة البيضاء وإعطاء المتصفح وقتاً لحساب الطول الجديد
+            setTimeout(() => {
+                if (audioInstance.duration) {
+                    const pct = audioInstance.currentTime / audioInstance.duration;
+                    const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+                    if (scrollableHeight > 0) {
+                        targetScroll = pct * scrollableHeight;
+                        currentScroll = targetScroll;
+                        window.scrollTo(0, targetScroll);
+                    }
+                } else {
+                    window.scrollTo({ top: 0, behavior: 'auto' });
+                    currentScroll = 0; targetScroll = 0;
                 }
-            } else {
-                window.scrollTo({ top: 0, behavior: 'auto' });
-                currentScroll = 0; targetScroll = 0;
-            }
+            }, 100);
         }
         
         if (!scrollRafId) updateScrollLoop();
@@ -407,7 +410,7 @@ window.addEventListener('offline', () => { if (!audioInstance.paused || isBuffer
 
 audioInstance.onended = () => { if (playbackMode === 'autonext') playNext(); };
 
-// تعديل الدالة لإضافة تأخير ثانيتين للسكرول التلقائي في البداية
+// تعديل الدالة لإضافة تأخير 5 ثواني للسكرول التلقائي في البداية
 audioInstance.ontimeupdate = () => {
     if (audioInstance.duration && !isDragging) {
         const pct = audioInstance.currentTime / audioInstance.duration;
@@ -415,8 +418,8 @@ audioInstance.ontimeupdate = () => {
         document.getElementById('curr-time').innerText = formatTime(audioInstance.currentTime);
         document.getElementById('total-time').innerText = formatTime(audioInstance.duration);
 
-        // تم إضافة شرط (audioInstance.currentTime > 2) لتأخير بدء السكرول أول ثانيتين
-        if (isFocusMode && !isUserScrolling && audioInstance.currentTime > 2) {
+        // تم تغيير التأخير إلى 5 ثوانٍ
+        if (isFocusMode && !isUserScrolling && audioInstance.currentTime > 5) {
             const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
             if (scrollableHeight > 0) {
                 targetScroll = pct * scrollableHeight;
