@@ -64,46 +64,60 @@ let activeSurahsData = [], playingSurahId = null, playingSheikhId = null, playin
 let isFocusMode = false;
 let activeDownloads = {}; let savedReciterEditions = {}; let playbackMode = 'autonext'; let playbackMenuOpen = false;
 
-// كاش لتخزين النصوص حتى لا نحملها من الإنترنت مرتين
+// متغيرات للتحكم في التمرير التلقائي (Auto-scroll) لمنع الإزعاج عند قراءة المستخدم بنفسه
+let isUserScrolling = false;
+let userInteractionTimeout;
+
+function resetUserInteraction() {
+    isUserScrolling = true;
+    clearTimeout(userInteractionTimeout);
+    userInteractionTimeout = setTimeout(() => { isUserScrolling = false; }, 3500); 
+}
+
+window.addEventListener('touchstart', resetUserInteraction, {passive: true});
+window.addEventListener('touchmove', resetUserInteraction, {passive: true});
+window.addEventListener('wheel', resetUserInteraction, {passive: true});
+window.addEventListener('mousedown', resetUserInteraction, {passive: true});
+
+// كاش لتخزين النصوص
 const quranTextCache = {};
 
 // دالة جلب النص القرآني وإظهاره
 async function loadSurahText(surahId) {
     const container = document.getElementById('quran-text-content');
     
-    // إذا كان النص موجوداً مسبقاً، اعرضه فوراً
     if (quranTextCache[surahId]) {
         container.innerHTML = quranTextCache[surahId];
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if(isFocusMode) window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
     }
 
-    // إظهار أيقونة تحميل مؤقتة
     container.innerHTML = '<div style="margin: 50px auto; display: flex; justify-content: center; color: var(--accent-gold);">' + icons.loading + '</div>';
     
     try {
         const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahId}`);
         const data = await response.json();
         
-        let textHTML = `<div style="font-family: 'Cairo', sans-serif; font-size: 1.5rem; font-weight: bold; color: var(--accent-gold); margin-bottom: 25px;">سورة ${data.data.name.replace('سُورَةُ ', '')}</div>`;
+        let textHTML = ''; // إزالة اسم السورة نهائياً
         
-        // إضافة البسملة لغير سورة التوبة والفاتحة
+        // إضافة البسملة كعنصر منفصل لغير سورة التوبة والفاتحة
         if (surahId !== 1 && surahId !== 9) {
-            textHTML += `<div style="font-size: 1.6rem; margin-bottom: 20px;">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>`;
+            textHTML += `<div style="font-size: 1.6rem; margin-bottom: 20px; color: var(--accent-gold);">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>`;
         }
 
         data.data.ayahs.forEach(ayah => {
             let text = ayah.text;
-            // حذف البسملة المدمجة في أول آية لبعض السور عبر الـ API
-            if (surahId !== 1 && ayah.numberInSurah === 1 && text.startsWith('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ')) {
-                text = text.replace('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ', '');
+            // حل مشكلة تكرار البسملة بدقة سواء استُخدمت "ا" أو ألف وصل "ٱ"
+            if (surahId !== 1 && ayah.numberInSurah === 1) {
+                text = text.replace(/^بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ\s*/, '');
+                text = text.replace(/^بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\s*/, '');
             }
             textHTML += `<span>${text} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span> </span>`;
         });
 
         quranTextCache[surahId] = textHTML;
         container.innerHTML = textHTML;
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // الصعود لأعلى الصفحة لبدء القراءة
+        if(isFocusMode) window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
         container.innerHTML = '<div style="color: var(--text-muted); font-family: Cairo, sans-serif; margin-top: 50px; font-size: 1rem;">يرجى الاتصال بالإنترنت لعرض النص القرآني.</div>';
     }
@@ -145,13 +159,14 @@ function toggleFocusMode() {
     
     if (isFocusMode) {
         document.body.classList.add('focus-mode-active');
-        window.scrollTo({ top: 0, behavior: 'smooth' }); 
         if (focusBtn) focusBtn.classList.add('active-feature');
         showToast(currentLang === 'ar' ? 'تم تفعيل وضع الاستماع الهادئ' : 'Focus Mode Enabled');
         
-        // عرض رسالة إذا فتح المستخدم الوضع الهادئ قبل تشغيل سورة
         if(!playingSurahId) {
             document.getElementById('quran-text-content').innerHTML = '<div style="margin-top:50px; font-size:1.2rem; color:var(--text-muted); font-family: Cairo, sans-serif;">الرجاء تشغيل سورة أولاً للقراءة...</div>';
+        } else {
+            // التمرير لأعلى عند الدخول للسورة الحالية
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     } else {
         document.body.classList.remove('focus-mode-active');
@@ -298,7 +313,6 @@ function playSurah(id, url) {
     document.getElementById('player-track-title').innerText = `${translations[currentLang].surahPrefix} ${sName}`;
     document.getElementById('progress-thumb').style.display = 'block'; document.getElementById('time-separator').style.display = 'inline';
 
-    // تحميل وعرض النص القرآني تلقائياً عند تشغيل السورة
     loadSurahText(id);
 
     updateHeaderUI(); syncUIWithAudioState();
@@ -343,9 +357,18 @@ audioInstance.onended = () => { if (playbackMode === 'autonext') playNext(); };
 
 audioInstance.ontimeupdate = () => {
     if (audioInstance.duration && !isDragging) {
-        document.getElementById('progress-bar-fill').style.width = ((audioInstance.currentTime / audioInstance.duration) * 100) + '%';
+        const pct = audioInstance.currentTime / audioInstance.duration;
+        document.getElementById('progress-bar-fill').style.width = (pct * 100) + '%';
         document.getElementById('curr-time').innerText = formatTime(audioInstance.currentTime);
         document.getElementById('total-time').innerText = formatTime(audioInstance.duration);
+
+        // التمرير التلقائي للنص القرآني في وضع الاستماع الهادئ بناءً على نسبة التشغيل
+        if (isFocusMode && !isUserScrolling) {
+            const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+            if (scrollableHeight > 0) {
+                window.scrollTo({ top: pct * scrollableHeight, behavior: 'auto' });
+            }
+        }
     }
 };
 
