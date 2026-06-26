@@ -88,8 +88,8 @@ window.addEventListener('mousedown', resetUserInteraction, {passive: true});
 function updateScrollLoop() {
     if (isFocusMode) {
         if (!isUserScrolling) {
-            // الرقم 0.008 يضمن انزلاقاً بطيئاً جداً ومريحاً للعين
-            currentScroll += (targetScroll - currentScroll) * 0.008; 
+            // الرقم 0.004 يضمن انزلاقاً بطيئاً جداً ومريحاً للعين
+            currentScroll += (targetScroll - currentScroll) * 0.004; 
             if (Math.abs(targetScroll - currentScroll) > 0.5) {
                 window.scrollTo(0, currentScroll);
             }
@@ -410,7 +410,7 @@ window.addEventListener('offline', () => { if (!audioInstance.paused || isBuffer
 
 audioInstance.onended = () => { if (playbackMode === 'autonext') playNext(); };
 
-// تعديل الدالة لتبدأ التمرير من نقطة الصفر بعد 13 ثانية بهدوء تام
+// تعديل الدالة لتبدأ التمرير من نقطة الصفر بعد 15 ثانية بهدوء تام
 audioInstance.ontimeupdate = () => {
     if (audioInstance.duration && !isDragging) {
         const pct = audioInstance.currentTime / audioInstance.duration;
@@ -419,15 +419,15 @@ audioInstance.ontimeupdate = () => {
         document.getElementById('total-time').innerText = formatTime(audioInstance.duration);
 
         if (isFocusMode && !isUserScrolling) {
-            const delayTime = 13; // الثواني التي سيتوقف فيها السكرول في البداية
+            const delayTime = 15; // الثواني التي سيتوقف فيها السكرول في البداية
             const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
             
             if (scrollableHeight > 0) {
                 if (audioInstance.currentTime <= delayTime) {
-                    // في أول 13 ثانية، الهدف هو البقاء في أعلى الصفحة تماماً
+                    // في أول 15 ثانية، الهدف هو البقاء في أعلى الصفحة تماماً
                     targetScroll = 0;
                 } else {
-                    // بعد 13 ثانية، نبدأ بحساب النسبة من جديد وكأنها نقطة البداية لتجنب الركض
+                    // بعد 15 ثانية، نبدأ بحساب النسبة من جديد وكأنها نقطة البداية لتجنب الركض
                     const activeTime = audioInstance.currentTime - delayTime;
                     const activeDuration = audioInstance.duration - delayTime;
                     const delayedPct = activeTime / activeDuration;
