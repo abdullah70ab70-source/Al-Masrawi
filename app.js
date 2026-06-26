@@ -101,7 +101,6 @@ function updateScrollLoop() {
 
 const quranTextCache = {};
 
-// التعديل الجديد والأقوى لدالة جلب النص القرآني
 async function loadSurahText(surahId) {
     const container = document.getElementById('quran-text-content');
     
@@ -126,26 +125,21 @@ async function loadSurahText(surahId) {
             let ayahText = ayah.text;
             let introHTML = '';
             
-            // فصل الجملة الاستهلالية من الآية الأولى (باستثناء الفاتحة 1 والتوبة 9)
             if (surahId !== 1 && surahId !== 9 && ayah.numberInSurah === 1) {
-                // تقسيم النص لأجزاء بناءً على أي مسافة أو سطر جديد
                 let words = ayahText.trim().split(/\s+/);
                 
-                // البسملة تتكون دائماً من أول 4 كلمات
                 if (words.length > 4) {
-                    let basmalaText = words.slice(0, 4).join(' '); // أول 4 كلمات
-                    let remainingText = words.slice(4).join(' ');  // باقي الآية
+                    let basmalaText = words.slice(0, 4).join(' '); 
+                    let remainingText = words.slice(4).join(' ');  
                     
                     introHTML = `<div class="api-intro-line" style="display: block; width: 100%; text-align: center; margin-bottom: 20px; font-size: 1.2em; color: var(--accent-gold); font-weight: bold;">${basmalaText}</div>`;
                     ayahText = remainingText;
                 } else if (words.length === 4) {
-                    // في الحالات النادرة التي تكون فيها الآية الأولى هي البسملة فقط
                     introHTML = `<div class="api-intro-line" style="display: block; width: 100%; text-align: center; margin-bottom: 20px; font-size: 1.2em; color: var(--accent-gold); font-weight: bold;">${ayahText}</div>`;
                     ayahText = ''; 
                 }
             }
 
-            // إضافة الجملة الاستهلالية ثم الآية إن وجدت
             if (ayahText.trim() !== '') {
                 textHTML += `${introHTML}<span>${ayahText} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span> </span>`;
             } else {
@@ -194,6 +188,7 @@ function toggleTheme() {
     document.getElementById('theme-toggle-btn').innerHTML = currentTheme === 'dark' ? icons.moon : icons.sun;
 }
 
+// تعديل دالة الاستماع الهادئ لمنع القفز لقمة السورة عند الدخول مجدداً
 function toggleFocusMode() {
     isFocusMode = !isFocusMode;
     const focusBtn = document.getElementById('focus-toggle-btn');
@@ -206,8 +201,19 @@ function toggleFocusMode() {
         if(!playingSurahId) {
             document.getElementById('quran-text-content').innerHTML = '<div style="margin-top:50px; font-size:1.2rem; color:var(--text-muted); font-family: Cairo, sans-serif;">الرجاء تشغيل سورة أولاً للقراءة...</div>';
         } else {
-            window.scrollTo({ top: 0, behavior: 'auto' });
-            currentScroll = 0; targetScroll = 0;
+            // حساب مكان تلاوة الشيخ الحالي فوراً والانتقال إليه مباشرة لمنع الرعشة والظهور من أول السورة
+            if (audioInstance.duration) {
+                const pct = audioInstance.currentTime / audioInstance.duration;
+                const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+                if (scrollableHeight > 0) {
+                    targetScroll = pct * scrollableHeight;
+                    currentScroll = targetScroll;
+                    window.scrollTo(0, targetScroll);
+                }
+            } else {
+                window.scrollTo({ top: 0, behavior: 'auto' });
+                currentScroll = 0; targetScroll = 0;
+            }
         }
         
         if (!scrollRafId) updateScrollLoop();
@@ -401,6 +407,7 @@ window.addEventListener('offline', () => { if (!audioInstance.paused || isBuffer
 
 audioInstance.onended = () => { if (playbackMode === 'autonext') playNext(); };
 
+// تعديل الدالة لإضافة تأخير ثانيتين للسكرول التلقائي في البداية
 audioInstance.ontimeupdate = () => {
     if (audioInstance.duration && !isDragging) {
         const pct = audioInstance.currentTime / audioInstance.duration;
@@ -408,7 +415,8 @@ audioInstance.ontimeupdate = () => {
         document.getElementById('curr-time').innerText = formatTime(audioInstance.currentTime);
         document.getElementById('total-time').innerText = formatTime(audioInstance.duration);
 
-        if (isFocusMode && !isUserScrolling) {
+        // تم إضافة شرط (audioInstance.currentTime > 2) لتأخير بدء السكرول أول ثانيتين
+        if (isFocusMode && !isUserScrolling && audioInstance.currentTime > 2) {
             const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
             if (scrollableHeight > 0) {
                 targetScroll = pct * scrollableHeight;
