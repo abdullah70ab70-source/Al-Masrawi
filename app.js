@@ -88,8 +88,8 @@ window.addEventListener('mousedown', resetUserInteraction, {passive: true});
 function updateScrollLoop() {
     if (isFocusMode) {
         if (!isUserScrolling) {
-            // تم تغيير 0.03 إلى 0.015 ليكون التمرير أبطأ وأكثر سلاسة
-            currentScroll += (targetScroll - currentScroll) * 0.015; 
+            // الرقم 0.008 يضمن انزلاقاً بطيئاً جداً ومريحاً للعين
+            currentScroll += (targetScroll - currentScroll) * 0.008; 
             if (Math.abs(targetScroll - currentScroll) > 0.5) {
                 window.scrollTo(0, currentScroll);
             }
@@ -410,7 +410,7 @@ window.addEventListener('offline', () => { if (!audioInstance.paused || isBuffer
 
 audioInstance.onended = () => { if (playbackMode === 'autonext') playNext(); };
 
-// تعديل الدالة لإضافة تأخير 5 ثواني للسكرول التلقائي في البداية
+// تعديل الدالة لتبدأ التمرير من نقطة الصفر بعد 13 ثانية بهدوء تام
 audioInstance.ontimeupdate = () => {
     if (audioInstance.duration && !isDragging) {
         const pct = audioInstance.currentTime / audioInstance.duration;
@@ -418,11 +418,22 @@ audioInstance.ontimeupdate = () => {
         document.getElementById('curr-time').innerText = formatTime(audioInstance.currentTime);
         document.getElementById('total-time').innerText = formatTime(audioInstance.duration);
 
-        // تم تغيير التأخير إلى 5 ثوانٍ
-        if (isFocusMode && !isUserScrolling && audioInstance.currentTime > 13) {
+        if (isFocusMode && !isUserScrolling) {
+            const delayTime = 13; // الثواني التي سيتوقف فيها السكرول في البداية
             const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+            
             if (scrollableHeight > 0) {
-                targetScroll = pct * scrollableHeight;
+                if (audioInstance.currentTime <= delayTime) {
+                    // في أول 13 ثانية، الهدف هو البقاء في أعلى الصفحة تماماً
+                    targetScroll = 0;
+                } else {
+                    // بعد 13 ثانية، نبدأ بحساب النسبة من جديد وكأنها نقطة البداية لتجنب الركض
+                    const activeTime = audioInstance.currentTime - delayTime;
+                    const activeDuration = audioInstance.duration - delayTime;
+                    const delayedPct = activeTime / activeDuration;
+                    
+                    targetScroll = delayedPct * scrollableHeight;
+                }
             }
         }
     }
