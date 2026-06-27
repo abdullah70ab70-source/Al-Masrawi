@@ -145,7 +145,6 @@ async function loadSurahText(surahId) {
             }
 
             if (ayahText.trim() !== '') {
-                // دمج الأيدي (ID) والكلاس (Class) للمزامنة والتظليل
                 textHTML += `${introHTML}<span id="verse-${surahId}-${ayah.numberInSurah}" class="quran-verse">${ayahText} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span></span> `;
             } else {
                 textHTML += `${introHTML}`;
@@ -210,8 +209,19 @@ function toggleTheme() {
     document.getElementById('theme-toggle-btn').innerHTML = currentTheme === 'dark' ? icons.moon : icons.sun;
 }
 
-function toggleFocusMode() {
-    isFocusMode = !isFocusMode;
+// دالة تفعيل أو تعطيل وضع الاستماع الهادئ (أصبحت تدعم الإجبار forceState)
+function toggleFocusMode(forceState) {
+    let newState;
+    if (typeof forceState === 'boolean') {
+        newState = forceState;
+    } else {
+        newState = !isFocusMode;
+    }
+
+    if (isFocusMode === newState) return; 
+    
+    isFocusMode = newState;
+    
     const focusBtn = document.getElementById('focus-toggle-btn');
     
     if (isFocusMode) {
@@ -370,9 +380,21 @@ async function selectEditionDropdown(num, event) {
     updateHeaderUI(); renderEditionDropdown(); await loadEditionData(currentSheikhId, num);
 }
 
+// تعديل الدالة لتشغيل الوضع الهادئ دائماً عند التشغيل من القائمة
 function playSurah(id, url) {
     initAudioBoost(); 
-    if (playingSurahId === id && playingSheikhId === currentSheikhId && playingEditionId === currentEdition) { togglePlayPause(); return; }
+    
+    if (playingSurahId === id && playingSheikhId === currentSheikhId && playingEditionId === currentEdition) { 
+        if (audioInstance.paused) {
+            // إذا كانت السورة متوقفة، قم بتشغيلها وادخل للوضع الهادئ
+            togglePlayPause();
+            if (!isFocusMode) toggleFocusMode(true);
+        } else {
+            // إذا كانت تعمل بالفعل، قم بإيقافها فقط
+            togglePlayPause();
+        }
+        return; 
+    }
     
     playingSurahId = id; playingSheikhId = currentSheikhId; playingEditionId = currentEdition;
     isBuffering = true; 
@@ -388,13 +410,13 @@ function playSurah(id, url) {
     document.getElementById('progress-thumb').style.display = 'block'; document.getElementById('time-separator').style.display = 'inline';
 
     loadSurahText(id);
-    loadSurahTimings(id); // استدعاء الأوقات مع النص
+    loadSurahTimings(id);
 
     updateHeaderUI(); syncUIWithAudioState();
     
-    // الانتقال التلقائي لوضع الاستماع الهادئ
+    // إجبار الدخول للوضع الهادئ عند اختيار سورة جديدة
     if (!isFocusMode) {
-        toggleFocusMode();
+        toggleFocusMode(true);
     }
     
     if ('mediaSession' in navigator) {
