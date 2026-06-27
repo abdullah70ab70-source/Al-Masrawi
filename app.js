@@ -145,7 +145,7 @@ async function loadSurahText(surahId) {
             }
 
             if (ayahText.trim() !== '') {
-                // دمج الأيدي (ID) الكلاس (Class) للمزامنة والتظليل
+                // دمج الأيدي (ID) والكلاس (Class) للمزامنة والتظليل
                 textHTML += `${introHTML}<span id="verse-${surahId}-${ayah.numberInSurah}" class="quran-verse">${ayahText} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span></span> `;
             } else {
                 textHTML += `${introHTML}`;
@@ -391,6 +391,11 @@ function playSurah(id, url) {
     loadSurahTimings(id); // استدعاء الأوقات مع النص
 
     updateHeaderUI(); syncUIWithAudioState();
+    
+    // الانتقال التلقائي لوضع الاستماع الهادئ
+    if (!isFocusMode) {
+        toggleFocusMode();
+    }
     
     if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({ title: `${translations[currentLang].surahPrefix} ${sName}`, artist: "الشيخ أحمد عيسى المعصراوي", album: 'مصحف كبار القراء', artwork: [ { src: 'maasarawi.jpg', sizes: '512x512', type: 'image/jpeg' } ] });
