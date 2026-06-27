@@ -45,6 +45,10 @@ const icons = {
 let audioInstance = new Audio(); audioInstance.crossOrigin = "anonymous"; 
 let audioCtx, gainNode, audioSource;
 
+// متغيرات التزامن مع ملفات JSON
+let surahTimings = {}; 
+let currentActiveVerse = null; 
+
 function initAudioBoost() {
     try {
         if (!audioCtx) {
@@ -88,8 +92,7 @@ window.addEventListener('mousedown', resetUserInteraction, {passive: true});
 function updateScrollLoop() {
     if (isFocusMode) {
         if (!isUserScrolling) {
-            // سرعة بطيئة فائقة النعومة
-            currentScroll += (targetScroll - currentScroll) * 0.004; 
+            currentScroll += (targetScroll - currentScroll) * 0.008; 
             if (Math.abs(targetScroll - currentScroll) > 0.5) {
                 window.scrollTo(0, currentScroll);
             }
@@ -105,13 +108,8 @@ const quranTextCache = {};
 async function loadSurahText(surahId) {
     const container = document.getElementById('quran-text-content');
     
-    // تفريغ الخريطة السابقة عند تحميل سورة جديدة
-    window.ayahsMap = [];
-    window.totalSurahChars = 0;
-
     if (quranTextCache[surahId]) {
         container.innerHTML = quranTextCache[surahId];
-        calculateAyahsMap(); // إعادة الحساب في حالة الكاش
         if(isFocusMode) {
             window.scrollTo({ top: 0, behavior: 'auto' });
             currentScroll = 0; targetScroll = 0;
@@ -126,7 +124,6 @@ async function loadSurahText(surahId) {
         const data = await response.json();
         
         let textHTML = ''; 
-        let totalChars = 0; // عداد الحروف
         
         data.data.ayahs.forEach(ayah => {
             let ayahText = ayah.text;
@@ -134,9 +131,11 @@ async function loadSurahText(surahId) {
             
             if (surahId !== 1 && surahId !== 9 && ayah.numberInSurah === 1) {
                 let words = ayahText.trim().split(/\s+/);
+                
                 if (words.length > 4) {
                     let basmalaText = words.slice(0, 4).join(' '); 
                     let remainingText = words.slice(4).join(' ');  
+                    
                     introHTML = `<div class="api-intro-line" style="display: block; width: 100%; text-align: center; margin-bottom: 20px; font-size: 1.2em; color: var(--accent-gold); font-weight: bold;">${basmalaText}</div>`;
                     ayahText = remainingText;
                 } else if (words.length === 4) {
@@ -146,9 +145,8 @@ async function loadSurahText(surahId) {
             }
 
             if (ayahText.trim() !== '') {
-                totalChars += ayahText.length;
-                // تغليف الآية ببياناتها للمزامنة الذكية
-                textHTML += `${introHTML}<span class="ayah-span" data-chars="${totalChars}"><span>${ayahText} </span><span class="verse-end">﴿${ayah.numberInSurah}﴾</span></span>`;
+                // دمج الأيدي (ID) الكلاس (Class) للمزامنة والتظليل
+                textHTML += `${introHTML}<span id="verse-${surahId}-${ayah.numberInSurah}" class="quran-verse">${ayahText} <span class="verse-end">﴿${ayah.numberInSurah}﴾</span></span> `;
             } else {
                 textHTML += `${introHTML}`;
             }
@@ -156,9 +154,6 @@ async function loadSurahText(surahId) {
 
         quranTextCache[surahId] = textHTML;
         container.innerHTML = textHTML;
-        
-        calculateAyahsMap();
-
         if(isFocusMode) {
             window.scrollTo({ top: 0, behavior: 'auto' });
             currentScroll = 0; targetScroll = 0;
@@ -168,18 +163,21 @@ async function loadSurahText(surahId) {
     }
 }
 
-// دالة حساب أماكن الحروف بالنسبة لطول الشاشة
-function calculateAyahsMap() {
-    setTimeout(() => {
-        const spans = document.querySelectorAll('.ayah-span');
-        let maxChars = 0;
-        window.ayahsMap = Array.from(spans).map(span => {
-            let c = parseInt(span.getAttribute('data-chars'));
-            if (c > maxChars) maxChars = c;
-            return { chars: c, top: span.offsetTop };
-        });
-        window.totalSurahChars = maxChars;
-    }, 500);
+// دالة جلب ملفات التزامن JSON
+async function loadSurahTimings(surahId) {
+    if (surahTimings[surahId] !== undefined) return; 
+
+    try {
+        const response = await fetch(`timings_${surahId}.json`);
+        if (response.ok) {
+            const data = await response.json();
+            surahTimings[surahId] = data; 
+        } else {
+            surahTimings[surahId] = null; 
+        }
+    } catch (error) {
+        surahTimings[surahId] = null;
+    }
 }
 
 function getSurahName(id, nameAr) { return currentLang === 'ar' ? nameAr : surahNamesEn[id]; }
@@ -224,15 +222,19 @@ function toggleFocusMode() {
         if(!playingSurahId) {
             document.getElementById('quran-text-content').innerHTML = '<div style="margin-top:50px; font-size:1.2rem; color:var(--text-muted); font-family: Cairo, sans-serif;">الرجاء تشغيل سورة أولاً للقراءة...</div>';
         } else {
-            // حل مشكلة الشاشة البيضاء بإعطاء المتصفح مهلة للرسم
             setTimeout(() => {
                 if (audioInstance.duration) {
-                    window.scrollTo(0, targetScroll);
+                    const pct = audioInstance.currentTime / audioInstance.duration;
+                    const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+                    if (scrollableHeight > 0) {
+                        targetScroll = pct * scrollableHeight;
+                        currentScroll = targetScroll;
+                        window.scrollTo(0, targetScroll);
+                    }
                 } else {
                     window.scrollTo({ top: 0, behavior: 'auto' });
                     currentScroll = 0; targetScroll = 0;
                 }
-                calculateAyahsMap(); // إعادة حساب الأماكن بعد تغيير الواجهة
             }, 100);
         }
         
@@ -386,6 +388,7 @@ function playSurah(id, url) {
     document.getElementById('progress-thumb').style.display = 'block'; document.getElementById('time-separator').style.display = 'inline';
 
     loadSurahText(id);
+    loadSurahTimings(id); // استدعاء الأوقات مع النص
 
     updateHeaderUI(); syncUIWithAudioState();
     
@@ -427,7 +430,6 @@ window.addEventListener('offline', () => { if (!audioInstance.paused || isBuffer
 
 audioInstance.onended = () => { if (playbackMode === 'autonext') playNext(); };
 
-// خوارزمية السكرول الذكي مع احتساب وزن النص وتأخير 15 ثانية
 audioInstance.ontimeupdate = () => {
     if (audioInstance.duration && !isDragging) {
         const pct = audioInstance.currentTime / audioInstance.duration;
@@ -435,39 +437,51 @@ audioInstance.ontimeupdate = () => {
         document.getElementById('curr-time').innerText = formatTime(audioInstance.currentTime);
         document.getElementById('total-time').innerText = formatTime(audioInstance.duration);
 
-        if (isFocusMode && !isUserScrolling && window.ayahsMap && window.ayahsMap.length > 0) {
-            const delayTime = 15; // 15 ثانية تأخير
+        let hasTimings = surahTimings[playingSurahId];
+        let activeVerseId = null;
+
+        if (hasTimings) {
+            const time = audioInstance.currentTime;
+            const verseData = hasTimings.find(v => 
+                time >= v.start_time && (v.end_time === null || time < v.end_time)
+            );
+            if (verseData) {
+                activeVerseId = `verse-${playingSurahId}-${verseData.id}`;
+            }
+        }
+
+        if (isFocusMode && !isUserScrolling) {
             
-            if (audioInstance.currentTime <= delayTime) {
-                targetScroll = 0;
-            } else {
-                const activeTime = audioInstance.currentTime - delayTime;
-                const activeDuration = audioInstance.duration - delayTime;
-                const delayedPct = activeTime / activeDuration;
-                
-                // تحديد مكان الحرف الحالي بدلاً من البيكسل المباشر
-                const targetChars = delayedPct * window.totalSurahChars;
-                
-                let targetElementTop = 0;
-                for (let i = 0; i < window.ayahsMap.length; i++) {
-                    if (window.ayahsMap[i].chars >= targetChars) {
-                        let prevChars = i > 0 ? window.ayahsMap[i-1].chars : 0;
-                        let prevTop = i > 0 ? window.ayahsMap[i-1].top : 0;
-                        let currentChars = window.ayahsMap[i].chars;
-                        let currentTop = window.ayahsMap[i].top;
+            if (hasTimings && activeVerseId) {
+                if (currentActiveVerse !== activeVerseId) {
+                    if (currentActiveVerse) {
+                        const prevEl = document.getElementById(currentActiveVerse);
+                        if (prevEl) prevEl.classList.remove('active-verse');
+                    }
+                    
+                    const currentEl = document.getElementById(activeVerseId);
+                    if (currentEl) {
+                        currentEl.classList.add('active-verse');
+                        currentActiveVerse = activeVerseId;
                         
-                        let ayahPct = (targetChars - prevChars) / (currentChars - prevChars);
-                        targetElementTop = prevTop + (ayahPct * (currentTop - prevTop));
-                        break;
+                        targetScroll = currentEl.offsetTop - (window.innerHeight / 2) + (currentEl.offsetHeight / 2);
+                        targetScroll = Math.max(0, targetScroll);
                     }
                 }
-                
-                // مسافة لإبقاء الآية مرئية ولا تلتصق بالزاوية العلوية
-                const offsetAdjust = window.innerHeight * 0.3; 
+            } else {
+                const delayTime = 13; 
                 const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
                 
-                let calculatedTarget = targetElementTop - offsetAdjust;
-                targetScroll = Math.max(0, Math.min(scrollableHeight, calculatedTarget));
+                if (scrollableHeight > 0) {
+                    if (audioInstance.currentTime <= delayTime) {
+                        targetScroll = 0;
+                    } else {
+                        const activeTime = audioInstance.currentTime - delayTime;
+                        const activeDuration = audioInstance.duration - delayTime;
+                        const delayedPct = activeTime / activeDuration;
+                        targetScroll = delayedPct * scrollableHeight;
+                    }
+                }
             }
         }
     }

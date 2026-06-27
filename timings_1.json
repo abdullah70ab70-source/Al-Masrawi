@@ -1,0 +1,9 @@
+[
+    { "id": 1, "start_time": 0, "end_time": 6 },
+    { "id": 2, "start_time": 6, "end_time": 12 },
+    { "id": 3, "start_time": 12, "end_time": 16 },
+    { "id": 4, "start_time": 16, "end_time": 21 },
+    { "id": 5, "start_time": 21, "end_time": 28 },
+    { "id": 6, "start_time": 28, "end_time": 33 },
+    { "id": 7, "start_time": 33, "end_time": null }
+]

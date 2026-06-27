@@ -156,3 +156,19 @@ body.focus-mode-active .quran-text-container {
 body.focus-mode-active {
     display: block; /* منع التوسيط العمودي الافتراضي للسماح بتمرير الصفحة (Scroll) */
 }
+
+/* =======================================================
+   تنسيقات مزامنة الآيات (التظليل الذكي)
+======================================================== */
+.quran-verse {
+    transition: color 0.4s ease, background-color 0.4s ease;
+    padding: 2px 6px;
+    border-radius: 8px;
+    display: inline;
+}
+
+.quran-verse.active-verse {
+    color: var(--accent-gold);
+    background-color: var(--glass-active);
+    font-weight: 700;
+}
